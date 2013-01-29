@@ -109,7 +109,7 @@
 
 						// poll div
 						
-						$this->content['q_view']['content'] = @$this->content['q_view']['content'].'<div id="qa-poll-div">'.$this->getPollDiv($qid,qa_get_logged_in_userid()).'</div>';
+						$this->content['q_view']['content'] = @$this->content['q_view']['content'].'<div id="qa-poll-div"><div>Below you can express your personal preferences for the timing of this action and the initiator:</div>'.$this->getPollDiv($qid,qa_get_logged_in_userid()).'</div>';
 						
 						// css class
 						
@@ -331,6 +331,8 @@ function pollVote(qid,uid,vid,cancel) {
 				
 				$content = explode(":",qa_html($answer['content']));
 				$pollTitle = $content[0];
+				//because changes all polls in database is not straight forward, implement quick and dirty replace solution
+				$pollTitle = str_replace("initiative","Initiator",str_replace("compliance","Timing",$pollTitle));
 				$content = $content[1];
 				if ($previousPollTitle!=$pollTitle) {					
 					$out .='<div id="qa-poll-choices-title">'.$pollTitle.':</div>';
