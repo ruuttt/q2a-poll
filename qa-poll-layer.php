@@ -332,7 +332,7 @@ function pollVote(qid,uid,vid,cancel) {
 				$content = explode(":",qa_html($answer['content']));
 				$pollTitle = $content[0];
 				//because changes all polls in database is not straight forward, implement quick and dirty replace solution
-				$pollTitle = str_replace("initiative","Initiator",str_replace("compliance","Timing",$pollTitle));
+				$pollTitle = str_replace("initiative","<br>Initiator",str_replace("compliance","Timing",$pollTitle));
 				$content = $content[1];
 				if ($previousPollTitle!=$pollTitle) {					
 					$out .='<div id="qa-poll-choices-title">'.$pollTitle.':</div>';
