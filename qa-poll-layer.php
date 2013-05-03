@@ -165,22 +165,33 @@
 					$this->output('<style>',str_replace('^',QA_HTML_THEME_LAYER_URLTOROOT,qa_opt('poll_css')),'</style>');
 					if(qa_permit_check('permit_vote_poll'))
 						$this->output_raw("<script>
-function pollVote(qid,uid,vid,cancel) {
-	var dataString = 'ajax_poll_id='+qid+'&ajax_poll_voter='+uid+'&ajax_poll_vote='+vid+(cancel?'&ajax_poll_cancel='+cancel:'');  
-	jQuery.ajax({  
-	  type: 'POST',  
-	  url: '".qa_self_html()."',  
-	  data: dataString,  
-	  success: function(data) {
-		if(/^[\\t\\n ]*###/.exec(data)) {
-			var error = data.replace(/^[\\t\\n ]*### */,'');
-			window.alert(error);
-		}
-		else {
-				jQuery('#qa-poll-div').html(data);
-		}
-	  }  
-	});
+var arrGid = new Array();
+function pollVote(gid,qid,uid,vid,cancel) {
+  if (typeof arrGid[gid] === 'undefined') arrGid[gid]=0;
+	if (arrGid[gid] == 1 && typeof cancel === 'undefined'){	
+	  // already votes, voting not allowed
+	}else{
+	  if (cancel==1){
+	    arrGid[gid] = 0;
+	  }else{
+	    arrGid[gid] = 1;
+	  }
+		var dataString = 'ajax_poll_id='+qid+'&ajax_poll_voter='+uid+'&ajax_poll_vote='+vid+(cancel?'&ajax_poll_cancel='+cancel:'');  
+		jQuery.ajax({  
+		  type: 'POST',  
+		  url: '".qa_self_html()."',  
+		  data: dataString,  
+		  success: function(data) {
+			if(/^[\\t\\n ]*###/.exec(data)) {
+				var error = data.replace(/^[\\t\\n ]*### */,'');
+				window.alert(error);
+			}
+			else {
+					jQuery('#qa-poll-div').html(data);
+			}
+		  }  
+		});
+	}
 }
 </script>");
 				}	
@@ -301,8 +312,19 @@ function pollVote(qid,uid,vid,cancel) {
 			$allow = true;
 			
 			$totalvotes = 0;
+			$gid = 0;
+			$previousPollTitle = '';
 			
 			foreach ($answers as $idx => $answer) {
+				$content = explode(":",qa_html($answer['content']));
+				$pollTitle = $content[0];
+				//because changes all polls in database is not straight forward, implement quick and dirty replace solution
+				$pollTitle = str_replace("initiative","Initiator",str_replace("compliance","Timing",$pollTitle));
+				$content = $content[1];
+				if ($previousPollTitle!=$pollTitle) {
+					$gid++;
+				}
+				$previousPollTitle = $pollTitle;
 				if(!$answer['votes']) $votes = array();
 				else $votes = explode(',',$answer['votes']);
 				
@@ -315,10 +337,10 @@ function pollVote(qid,uid,vid,cancel) {
 					$answers[$idx]['vote'] = '<div class="qa-poll-voted-button" title="'.qa_html(qa_lang('polls/voted_button')).'" onclick="alert(\''.qa_lang('polls/cannot_change').'\')"></div>';
 				}
 				else if(!in_array($uid,$votes))
-					$answers[$idx]['vote'] = '<div class="qa-poll-vote-button" title="'.qa_html(qa_lang('polls/vote_button')).'" onclick="pollVote('.$qid.','.$uid.','.$answer['id'].')"></div>';
+					$answers[$idx]['vote'] = '<div class="qa-poll-vote-button" title="'.qa_html(qa_lang('polls/vote_button')).'" onclick="pollVote('.$gid.','.$qid.','.$uid.','.$answer['id'].')"></div>';
 				else {
-					$answers[$idx]['vote'] = '<div class="qa-poll-voted-button" title="'.qa_html(qa_lang('polls/voted_button')).'" onclick="pollVote('.$qid.','.$uid.','.$answer['id'].',1)"></div>';
-					
+					$answers[$idx]['vote'] = '<div class="qa-poll-voted-button" title="'.qa_html(qa_lang('polls/voted_button')).'" onclick="pollVote('.$gid.','.$qid.','.$uid.','.$answer['id'].',1)"></div>';
+					$out.="<script>arrGid[".$gid."] = 1;</script>";					
 					$voted = true;
 				}
 			}
@@ -332,10 +354,11 @@ function pollVote(qid,uid,vid,cancel) {
 				$content = explode(":",qa_html($answer['content']));
 				$pollTitle = $content[0];
 				//because changes all polls in database is not straight forward, implement quick and dirty replace solution
-				$pollTitle = str_replace("initiative","<br>Initiator",str_replace("compliance","Timing",$pollTitle));
+				$pollTitle = str_replace("initiative","Initiator",str_replace("compliance","Timing",$pollTitle));
 				$content = $content[1];
 				if ($previousPollTitle!=$pollTitle) {					
-					$out .='<div id="qa-poll-choices-title">'.$pollTitle.':</div>';
+					if($previousPollTitle!='') $out .='</div></div>';
+					$out .='<div id="qa-poll-choices-group-container"><div id="qa-poll-choices-group"><div id="qa-poll-choices-title">'.$pollTitle.':</div>';
 				}
 				$previousPollTitle = $pollTitle;
 				$out .= '<div class="qa-poll-choice">'.@$answer['vote'].'<span class="qa-poll-choice-title">'.$content.'</span>';
@@ -357,6 +380,7 @@ function pollVote(qid,uid,vid,cancel) {
 				
 				$out .= '</tr></table></div>';
 			}
+			$out .= "</div></div>";
 			if($this->poll > 9) { // poll closed
 				$out .= '<div class="qa-poll-closed">'.qa_lang('polls/poll_closed').'</div>';
 				if(!qa_user_permit_error('permit_close_poll') || qa_get_logged_in_userid() == $author) 

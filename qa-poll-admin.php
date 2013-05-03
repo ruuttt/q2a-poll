@@ -23,6 +23,9 @@
 	font-weight:bold;
 	margin-bottom:8px;
 }
+#qa-poll-choices-group {
+  display: inline-block;
+}
 .qa-poll-choice {
 	clear:both;
 	padding:5px 0 5px 5px;
