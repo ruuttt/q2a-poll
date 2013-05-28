@@ -392,6 +392,15 @@ function pollVote(gid,qid,uid,vid,cancel) {
 				$out .= '<input type="hidden" class="qa-poll-button" title="'.qa_lang('polls/delete_poll_hover').'" value="'.qa_lang('polls/delete_poll').'" name="poll_delete">';
 				
 			$out .= '</div>';
+			$out .= "<script type='text/javascript'>
+	$(document).ready(function(){
+	  strContent = \$('.qa-q-view-where-data')[0].innerHTML; 
+		intPosBegin=strContent.indexOf('>')+1;
+		intPosEnd=strContent.indexOf('</a>');
+		strImageName = strContent.substr(intPosBegin,intPosEnd-intPosBegin).toLowerCase().replace(' ','-').replace(' ','-').replace(' ','-').replace(' ','-').replace(' ','-');
+		\$('.question .qa-voting').append('<a href=\"/ImplementationPlan/'+strImageName+'\"><img src=\"/ImplementationPlan/'+strImageName+'.png\" style=\"border:0px;width:100px\"></a>');
+	});
+</script>";
 			
 			return $out;
 		}
